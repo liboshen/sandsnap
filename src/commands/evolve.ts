@@ -4,15 +4,11 @@
 
 import { spawn } from "node:child_process";
 import { Sandbox } from "@deno/sandbox";
-import type { Region } from "@deno/sandbox";
 import { getClient, snapshotExists, tempVolumeSlug } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile, promptOnFailure } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
 import { copyToSandbox } from "../lib/copy.js";
-
-type Capacity = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
-type Memory = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
-type Timeout = `${number}m` | `${number}s` | "session";
+import { parseCapacity, parseMemory, parseTimeout, parseRegion } from "../lib/parse.js";
 
 interface EvolveOptions {
   from?: string;
@@ -23,36 +19,6 @@ interface EvolveOptions {
   copy: string[];
   script?: string;
   overwrite?: boolean;
-}
-
-function parseCapacity(s: string): Capacity {
-  // Validate and return as proper type
-  if (/^\d+(GiB|MiB|GB|MB)$/.test(s)) {
-    return s as Capacity;
-  }
-  throw new Error(`Invalid capacity format: ${s}. Use formats like 2GiB, 10GB, 512MiB`);
-}
-
-function parseMemory(s: string): Memory {
-  if (/^\d+(GiB|MiB|GB|MB)$/.test(s)) {
-    return s as Memory;
-  }
-  throw new Error(`Invalid memory format: ${s}. Use formats like 1GiB, 2GiB, 4GiB (768MiB-4GiB)`);
-}
-
-function parseTimeout(s: string): Timeout {
-  if (s === "session") return "session";
-  if (/^\d+[ms]$/.test(s)) {
-    return s as Timeout;
-  }
-  throw new Error(`Invalid timeout format: ${s}. Use formats like 10m, 600s, or session`);
-}
-
-function parseRegion(s: string): Region {
-  if (s === "ord" || s === "ams") {
-    return s;
-  }
-  throw new Error(`Invalid region: ${s}. Use ord or ams`);
 }
 
 export async function evolve(name: string, options: EvolveOptions): Promise<void> {

@@ -6,25 +6,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Sandbox } from "@deno/sandbox";
 import { info, error } from "./output.js";
-
-export interface CopySpec {
-  src: string;
-  dst: string;
-}
-
-/**
- * Parse a copy spec string "src:dst" into {src, dst}
- */
-export function parseCopySpec(spec: string): CopySpec {
-  const colonIndex = spec.indexOf(":");
-  if (colonIndex === -1) {
-    throw new Error(`Invalid copy spec "${spec}". Use format "src:dst"`);
-  }
-  return {
-    src: spec.slice(0, colonIndex),
-    dst: spec.slice(colonIndex + 1),
-  };
-}
+import { parseCopySpec } from "./parse.js";
+export type { CopySpec } from "./parse.js";
 
 /**
  * Copy files from host to sandbox

@@ -4,14 +4,11 @@
 
 import { spawn } from "node:child_process";
 import { Sandbox } from "@deno/sandbox";
-import type { Region } from "@deno/sandbox";
 import { snapshotExists } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
 import { copyToSandbox, copyFromSandbox } from "../lib/copy.js";
-
-type Timeout = `${number}m` | `${number}s` | "session";
-type Memory = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
+import { parseMemory, parseTimeout, parseRegion } from "../lib/parse.js";
 
 interface RunOptions {
   timeout: string;
@@ -20,28 +17,6 @@ interface RunOptions {
   copy: string[];
   copyOut: string[];
   script?: string;
-}
-
-function parseTimeout(s: string): Timeout {
-  if (s === "session") return "session";
-  if (/^\d+[ms]$/.test(s)) {
-    return s as Timeout;
-  }
-  throw new Error(`Invalid timeout format: ${s}. Use formats like 10m, 600s, or session`);
-}
-
-function parseRegion(s: string): Region {
-  if (s === "ord" || s === "ams") {
-    return s;
-  }
-  throw new Error(`Invalid region: ${s}. Use ord or ams`);
-}
-
-function parseMemory(s: string): Memory {
-  if (/^\d+(GiB|MiB|GB|MB)$/.test(s)) {
-    return s as Memory;
-  }
-  throw new Error(`Invalid memory format: ${s}. Use formats like 1GiB, 2GiB, 4GiB (768MiB-4GiB)`);
 }
 
 export async function run(snapshot: string, options: RunOptions): Promise<void> {

@@ -9,9 +9,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "poc": "tsx poc/test-workflow.ts",
-    "test": "node --test --experimental-test-coverage dist/**/*.test.js",
-    "test:dev": "tsx --test src/**/*.test.ts"
+    "test": "npm run build && node --test dist/lib/*.test.js",
+    "test:unit": "npm run build && node --test dist/lib/*.test.js",
+    "test:integration": "npm run build && node --test test/integration/*.test.ts",
+    "test:all": "npm run test:unit && npm run test:integration"
   },
   "engines": {
     "node": ">=24.0.0"
