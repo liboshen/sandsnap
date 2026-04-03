@@ -1,0 +1,36 @@
+{
+  "name": "sandsnap",
+  "version": "0.1.0",
+  "description": "CLI utility for managing Deno Sandbox environments with simplified snapshot-based workflows",
+  "type": "module",
+  "bin": {
+    "sandsnap": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "poc": "tsx poc/test-workflow.ts",
+    "test": "node --test --experimental-test-coverage dist/**/*.test.js",
+    "test:dev": "tsx --test src/**/*.test.ts"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "keywords": [
+    "deno",
+    "sandbox",
+    "cli",
+    "container",
+    "isolation"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@deno/sandbox": "^0.13.2",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
