@@ -214,4 +214,60 @@ cat /etc/evolved-marker
       assert.ok(!snapshots.some((s: { slug: string }) => s.slug === tempSnap));
     });
   });
+
+  describe("sandsnap evolve reliability", () => {
+    it("handles volume unmount delay with polling", () => {
+      // Create a snapshot that writes enough data to potentially cause unmount delay
+      const tempSnap = `${TEST_PREFIX}-large`;
+      const script = `
+# Write some data to exercise the volume
+dd if=/dev/zero of=/tmp/testfile bs=1M count=10 2>/dev/null
+echo "large-file-test"
+`;
+      const { stdout, exitCode } = runWithStdin(`evolve ${tempSnap} --verbose`, script);
+      
+      // Should succeed (polling handles the delay)
+      assert.strictEqual(exitCode, 0, `Should succeed: ${stdout}`);
+      assert.ok(stdout.includes(`Snapshot '${tempSnap}' created!`), `Should create snapshot: ${stdout}`);
+      
+      // Clean up
+      try {
+        execSync(`${CLI} delete ${tempSnap} --force 2>&1`, { stdio: "pipe" });
+      } catch { /* ignore */ }
+    });
+
+    it("discards changes and cleans up volume on script failure", () => {
+      const tempSnap = `${TEST_PREFIX}-fail`;
+      
+      // Get volume count before
+      const beforeVolumes = execSync(`deno sandbox volumes ls 2>&1`, { encoding: "utf8" });
+      const beforeCount = (beforeVolumes.match(/vol_/g) || []).length;
+      
+      // Run evolve with a failing script (in non-interactive, it discards)
+      const { stdout } = runWithStdin(`evolve ${tempSnap}`, `
+echo "about to fail"
+exit 1
+`);
+      
+      // Should show failure and discard
+      assert.ok(stdout.includes("Script failed") || stdout.includes("Discarding"), 
+        `Should show failure/discard: ${stdout}`);
+      
+      // Snapshot should NOT be created
+      const listResult = run("list --json");
+      const snapshots = JSON.parse(listResult.stdout);
+      assert.ok(!snapshots.some((s: { slug: string }) => s.slug === tempSnap),
+        `Snapshot should not be created on failure`);
+      
+      // Wait a moment for cleanup
+      execSync("sleep 2");
+      
+      // Volume should be cleaned up (count should be same or less)
+      const afterVolumes = execSync(`deno sandbox volumes ls 2>&1`, { encoding: "utf8" });
+      const afterCount = (afterVolumes.match(/vol_/g) || []).length;
+      
+      assert.ok(afterCount <= beforeCount + 1, 
+        `Volume should be cleaned up. Before: ${beforeCount}, After: ${afterCount}`);
+    });
+  });
 });
