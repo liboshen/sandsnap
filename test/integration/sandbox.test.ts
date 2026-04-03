@@ -63,15 +63,34 @@ describe("Integration Tests", { skip: !hasToken }, () => {
   const snapshotName = `${TEST_PREFIX}-snap`;
   const evolvedSnapshotName = `${TEST_PREFIX}-evolved`;
   
+  // Cleanup old test snapshots before running
+  before(async () => {
+    console.log("Cleaning up old test snapshots...");
+    try {
+      const { stdout } = run("list --json");
+      const snapshots = JSON.parse(stdout) as { slug: string }[];
+      for (const snap of snapshots) {
+        // Clean up any snapshot starting with "test-" followed by digits (timestamps)
+        if (/^test-\d+/.test(snap.slug)) {
+          console.log(`  Deleting old test snapshot: ${snap.slug}`);
+          try {
+            execSync(`${CLI} delete ${snap.slug} --force 2>&1`, { stdio: "pipe" });
+          } catch { /* ignore */ }
+        }
+      }
+    } catch { /* ignore */ }
+  });
+  
   // Cleanup after all tests
   after(async () => {
     console.log("Cleaning up test snapshots...");
-    try {
-      execSync(`${CLI} delete ${snapshotName} --force`, { stdio: "pipe" });
-    } catch { /* ignore */ }
-    try {
-      execSync(`${CLI} delete ${evolvedSnapshotName} --force`, { stdio: "pipe" });
-    } catch { /* ignore */ }
+    // Delete in reverse order of creation (evolved depends on base)
+    for (const snap of [`${TEST_PREFIX}-temp`, evolvedSnapshotName, snapshotName]) {
+      try {
+        execSync(`${CLI} delete ${snap} --force 2>&1`, { stdio: "pipe", timeout: 60000 });
+        console.log(`  Deleted ${snap}`);
+      } catch { /* ignore */ }
+    }
   });
 
   describe("sandsnap list", () => {

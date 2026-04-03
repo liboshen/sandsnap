@@ -30,3 +30,4 @@ coverage/
 
 # POC / experiments
 poc/
+deno.jsonc
