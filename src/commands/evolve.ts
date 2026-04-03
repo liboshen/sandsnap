@@ -122,12 +122,27 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
         shouldSnapshot = true; // User explicitly exited
       }
       
-      // Explicitly kill sandbox before snapshotting
+      // Kill sandbox before snapshotting
+      // Note: sandbox.kill() can hang waiting for connection close,
+      // so we use a timeout wrapper.
       info("Stopping sandbox...");
-      await sandbox.kill();
+      try {
+        await Promise.race([
+          sandbox.kill(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Kill timeout")), 15000)
+          )
+        ]);
+      } catch (err) {
+        // Kill timed out or failed, try closing the connection
+        if (err instanceof Error && err.message === "Kill timeout") {
+          info("Kill timed out, closing connection...");
+          await sandbox.close();
+        }
+      }
       
-      // Wait a moment for volume to unmount
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for volume to unmount
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
     // Sandbox is now stopped
     
