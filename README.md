@@ -104,7 +104,6 @@ EOF
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--from <snapshot>` | Base snapshot to evolve from | debian-13 |
-| `--timeout <duration>` | Sandbox timeout (e.g., `10m`, `30m`) | `10m` |
 | `--capacity <size>` | Volume capacity (e.g., `2GiB`, `10GiB`) | `10GiB` |
 | `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
@@ -274,7 +273,7 @@ echo "$RESULT"
 
 - Commands run as `app` user; use `sudo` for system operations
 - Snapshots are region-specific (`ord` = Chicago, `ams` = Amsterdam)
-- Default timeout is `session` for `run` (dies when CLI exits) and `10m` for `evolve`
+- Default timeout is `session` for `run` (sandbox stops when CLI exits)
 
 ## Environment Variables
 

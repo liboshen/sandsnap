@@ -8,11 +8,10 @@ import { getClient, snapshotExists, tempVolumeSlug } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile, promptOnFailure } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
 import { copyToSandbox } from "../lib/copy.js";
-import { parseCapacity, parseMemory, parseTimeout, parseRegion, parseEnvVars } from "../lib/parse.js";
+import { parseCapacity, parseMemory, parseRegion, parseEnvVars } from "../lib/parse.js";
 
 interface EvolveOptions {
   from?: string;
-  timeout: string;
   capacity: string;
   memory: string;
   region: string;
@@ -28,7 +27,6 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
   
   // Parse and validate options
   const capacity = parseCapacity(options.capacity);
-  const timeout = parseTimeout(options.timeout);
   const region = parseRegion(options.region);
   const memory = parseMemory(options.memory);
   const env = parseEnvVars(options.env);
@@ -79,7 +77,7 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
       await using sandbox = await Sandbox.create({
         region: region,
         root: volumeSlug,
-        timeout: timeout,
+        timeout: "session",
         memory: memory,
         env: Object.keys(env).length > 0 ? env : undefined,
       });
@@ -122,27 +120,9 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
         shouldSnapshot = true; // User explicitly exited
       }
       
-      // Kill sandbox before snapshotting
-      // Note: sandbox.kill() can hang waiting for connection close,
-      // so we use a timeout wrapper.
+      // Stop sandbox - with "session" timeout, closing connection stops it
       info("Stopping sandbox...");
-      try {
-        await Promise.race([
-          sandbox.kill(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Kill timeout")), 15000)
-          )
-        ]);
-      } catch (err) {
-        // Kill timed out or failed, try closing the connection
-        if (err instanceof Error && err.message === "Kill timeout") {
-          info("Kill timed out, closing connection...");
-          await sandbox.close();
-        }
-      }
-      
-      // Wait for volume to unmount
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await sandbox.close();
     }
     // Sandbox is now stopped
     
@@ -158,11 +138,26 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
     }
     
     // Step 4: Create snapshot (sandbox must be closed first)
+    // Poll until volume is unmounted (may take a few seconds)
     step(4, 4, `Creating snapshot '${name}'...`);
-    await client.volumes.snapshot(volume.id, {
-      slug: name,
-    });
-    success(`Snapshot '${name}' created!`);
+    const maxAttempts = 12;  // 12 attempts * 5 seconds = 60 seconds max
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await client.volumes.snapshot(volume.id, { slug: name });
+        success(`Snapshot '${name}' created!`);
+        break;
+      } catch (err) {
+        const isVolumeStillMounted = err instanceof Error && 
+          err.message.includes("currently mounted");
+        
+        if (isVolumeStillMounted && attempt < maxAttempts) {
+          info(`Volume still mounted, waiting... (attempt ${attempt}/${maxAttempts})`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        } else {
+          throw err;
+        }
+      }
+    }
     
     // Note: We don't delete the volume here because the snapshot
     // depends on it (copy-on-write). The volume is now "owned" by
@@ -170,11 +165,11 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
     
   } catch (err) {
     error(`Failed: ${err}`);
-    // Attempt to clean up volume on error
+    // Try to clean up orphaned volume
     try {
       await client.volumes.delete(volumeSlug);
     } catch {
-      // Ignore cleanup errors
+      // Ignore - volume might still be mounted or already deleted
     }
     process.exit(1);
   }

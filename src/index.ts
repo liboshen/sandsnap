@@ -25,7 +25,6 @@ program
   .command("evolve <name>")
   .description("Create a new snapshot by running commands on a base state")
   .option("--from <snapshot>", "Base snapshot to evolve from (default: debian-13 base image)")
-  .option("--timeout <duration>", "Sandbox timeout (e.g., 10m, 30m)", "10m")
   .option("--capacity <size>", "Volume capacity (e.g., 2GiB, 10GiB)", "10GiB")
   .option("--memory <size>", "Sandbox memory (e.g., 1GiB, 2GiB, 4GiB)", "1280MiB")
   .option("--region <region>", "Region (ord or ams)", "ord")
