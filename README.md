@@ -106,6 +106,7 @@ EOF
 | `--from <snapshot>` | Base snapshot to evolve from | debian-13 |
 | `--timeout <duration>` | Sandbox timeout (e.g., `10m`, `30m`) | `10m` |
 | `--capacity <size>` | Volume capacity (e.g., `2GiB`, `10GiB`) | `10GiB` |
+| `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
 | `--script <file>` | Read commands from file | - |
 | `--overwrite` | Replace existing snapshot | `false` |
@@ -132,6 +133,7 @@ sandsnap run my-env --script test.sh
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--timeout <duration>` | Sandbox timeout | `session` |
+| `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
 | `--script <file>` | Read commands from file | - |
 

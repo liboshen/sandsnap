@@ -10,9 +10,11 @@ import { isInteractive, readStdin, readScriptFile } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
 
 type Timeout = `${number}m` | `${number}s` | "session";
+type Memory = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
 
 interface RunOptions {
   timeout: string;
+  memory: string;
   region: string;
   script?: string;
 }
@@ -32,10 +34,18 @@ function parseRegion(s: string): Region {
   throw new Error(`Invalid region: ${s}. Use ord or ams`);
 }
 
+function parseMemory(s: string): Memory {
+  if (/^\d+(GiB|MiB|GB|MB)$/.test(s)) {
+    return s as Memory;
+  }
+  throw new Error(`Invalid memory format: ${s}. Use formats like 1GiB, 2GiB, 4GiB (768MiB-4GiB)`);
+}
+
 export async function run(snapshot: string, options: RunOptions): Promise<void> {
   // Parse and validate options
   const timeout = parseTimeout(options.timeout);
   const region = parseRegion(options.region);
+  const memory = parseMemory(options.memory);
   
   try {
     // Check if snapshot exists
@@ -62,6 +72,7 @@ export async function run(snapshot: string, options: RunOptions): Promise<void> 
       region: region,
       root: snapshot,
       timeout: timeout,
+      memory: memory,
     });
     info(`Sandbox ready: ${sandbox.id}`);
     

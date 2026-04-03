@@ -10,12 +10,14 @@ import { isInteractive, readStdin, readScriptFile, promptOnFailure } from "../li
 import { info, success, error, step } from "../lib/output.js";
 
 type Capacity = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
+type Memory = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
 type Timeout = `${number}m` | `${number}s` | "session";
 
 interface EvolveOptions {
   from?: string;
   timeout: string;
   capacity: string;
+  memory: string;
   region: string;
   script?: string;
   overwrite?: boolean;
@@ -27,6 +29,13 @@ function parseCapacity(s: string): Capacity {
     return s as Capacity;
   }
   throw new Error(`Invalid capacity format: ${s}. Use formats like 2GiB, 10GB, 512MiB`);
+}
+
+function parseMemory(s: string): Memory {
+  if (/^\d+(GiB|MiB|GB|MB)$/.test(s)) {
+    return s as Memory;
+  }
+  throw new Error(`Invalid memory format: ${s}. Use formats like 1GiB, 2GiB, 4GiB (768MiB-4GiB)`);
 }
 
 function parseTimeout(s: string): Timeout {
@@ -52,6 +61,7 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
   const capacity = parseCapacity(options.capacity);
   const timeout = parseTimeout(options.timeout);
   const region = parseRegion(options.region);
+  const memory = parseMemory(options.memory);
   
   // Determine the source for the volume
   const fromSource = options.from || "builtin:debian-13";
@@ -100,6 +110,7 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
         region: region,
         root: volumeSlug,
         timeout: timeout,
+        memory: memory,
       });
       info(`Sandbox ready: ${sandbox.id}`);
       
