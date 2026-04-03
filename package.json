@@ -1,19 +1,34 @@
 {
   "name": "sandsnap",
   "version": "0.1.0",
-  "description": "CLI utility for managing Deno Sandbox environments with simplified snapshot-based workflows",
+  "description": "CLI for managing Deno Sandbox environments with snapshot-based workflows",
   "type": "module",
   "bin": {
     "sandsnap": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build",
     "test": "npm run build && node --test dist/lib/*.test.js",
     "test:unit": "npm run build && node --test dist/lib/*.test.js",
     "test:integration": "npm run build && node --test test/integration/*.test.ts",
     "test:all": "npm run test:unit && npm run test:integration"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiboShen/sandsnap.git"
+  },
+  "homepage": "https://github.com/LiboShen/sandsnap#readme",
+  "bugs": {
+    "url": "https://github.com/LiboShen/sandsnap/issues"
+  },
+  "author": "Libo Shen",
   "engines": {
     "node": ">=24.0.0"
   },
@@ -22,7 +37,10 @@
     "sandbox",
     "cli",
     "container",
-    "isolation"
+    "isolation",
+    "snapshot",
+    "microvm",
+    "linux"
   ],
   "license": "MIT",
   "dependencies": {
