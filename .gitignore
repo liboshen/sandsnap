@@ -31,3 +31,4 @@ coverage/
 # POC / experiments
 poc/
 deno.jsonc
+.pi/todos/
