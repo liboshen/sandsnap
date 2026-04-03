@@ -52,3 +52,28 @@ export function parseCopySpec(spec: string): CopySpec {
     dst: spec.slice(colonIndex + 1),
   };
 }
+
+export interface EnvVar {
+  key: string;
+  value: string;
+}
+
+export function parseEnvVar(spec: string): EnvVar {
+  const eqIndex = spec.indexOf("=");
+  if (eqIndex === -1) {
+    throw new Error(`Invalid env var "${spec}". Use format "KEY=VALUE"`);
+  }
+  return {
+    key: spec.slice(0, eqIndex),
+    value: spec.slice(eqIndex + 1),
+  };
+}
+
+export function parseEnvVars(specs: string[]): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const spec of specs) {
+    const { key, value } = parseEnvVar(spec);
+    env[key] = value;
+  }
+  return env;
+}

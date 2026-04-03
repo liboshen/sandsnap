@@ -108,6 +108,7 @@ EOF
 | `--capacity <size>` | Volume capacity (e.g., `2GiB`, `10GiB`) | `10GiB` |
 | `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
+| `--env <KEY=VALUE>` | Set environment variable (repeatable) | - |
 | `--copy <src:dst>` | Copy file/dir from host to sandbox (repeatable) | - |
 | `--script <file>` | Read commands from file | - |
 | `--overwrite` | Replace existing snapshot | `false` |
@@ -136,6 +137,7 @@ sandsnap run my-env --script test.sh
 | `--timeout <duration>` | Sandbox timeout | `session` |
 | `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
+| `--env <KEY=VALUE>` | Set environment variable (repeatable) | - |
 | `--copy <src:dst>` | Copy file/dir from host to sandbox (repeatable) | - |
 | `--copy-out <src:dst>` | Copy file/dir from sandbox to host (repeatable) | - |
 | `--script <file>` | Read commands from file | - |
@@ -221,6 +223,19 @@ git clone https://github.com/user/repo.git
 cd repo
 npm install
 npm test
+EOF
+```
+
+### Environment variables
+
+```bash
+# Pass environment variables to the sandbox
+sandsnap run python-env \
+  --env API_KEY=secret123 \
+  --env DEBUG=true \
+  <<'EOF'
+echo "API_KEY=$API_KEY"
+python3 -c "import os; print(os.environ.get('DEBUG'))"
 EOF
 ```
 

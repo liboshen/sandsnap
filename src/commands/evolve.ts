@@ -8,7 +8,7 @@ import { getClient, snapshotExists, tempVolumeSlug } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile, promptOnFailure } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
 import { copyToSandbox } from "../lib/copy.js";
-import { parseCapacity, parseMemory, parseTimeout, parseRegion } from "../lib/parse.js";
+import { parseCapacity, parseMemory, parseTimeout, parseRegion, parseEnvVars } from "../lib/parse.js";
 
 interface EvolveOptions {
   from?: string;
@@ -16,6 +16,7 @@ interface EvolveOptions {
   capacity: string;
   memory: string;
   region: string;
+  env: string[];
   copy: string[];
   script?: string;
   overwrite?: boolean;
@@ -30,6 +31,7 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
   const timeout = parseTimeout(options.timeout);
   const region = parseRegion(options.region);
   const memory = parseMemory(options.memory);
+  const env = parseEnvVars(options.env);
   
   // Determine the source for the volume
   const fromSource = options.from || "builtin:debian-13";
@@ -79,6 +81,7 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
         root: volumeSlug,
         timeout: timeout,
         memory: memory,
+        env: Object.keys(env).length > 0 ? env : undefined,
       });
       info(`Sandbox ready: ${sandbox.id}`);
       

@@ -8,12 +8,13 @@ import { snapshotExists } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
 import { copyToSandbox, copyFromSandbox } from "../lib/copy.js";
-import { parseMemory, parseTimeout, parseRegion } from "../lib/parse.js";
+import { parseMemory, parseTimeout, parseRegion, parseEnvVars } from "../lib/parse.js";
 
 interface RunOptions {
   timeout: string;
   memory: string;
   region: string;
+  env: string[];
   copy: string[];
   copyOut: string[];
   script?: string;
@@ -24,6 +25,7 @@ export async function run(snapshot: string, options: RunOptions): Promise<void> 
   const timeout = parseTimeout(options.timeout);
   const region = parseRegion(options.region);
   const memory = parseMemory(options.memory);
+  const env = parseEnvVars(options.env);
   
   try {
     // Check if snapshot exists
@@ -51,6 +53,7 @@ export async function run(snapshot: string, options: RunOptions): Promise<void> 
       root: snapshot,
       timeout: timeout,
       memory: memory,
+      env: Object.keys(env).length > 0 ? env : undefined,
     });
     info(`Sandbox ready: ${sandbox.id}`);
     

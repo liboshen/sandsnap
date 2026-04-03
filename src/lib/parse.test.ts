@@ -6,6 +6,8 @@ import {
   parseTimeout,
   parseRegion,
   parseCopySpec,
+  parseEnvVar,
+  parseEnvVars,
 } from "./parse.js";
 
 describe("parseCapacity", () => {
@@ -127,5 +129,46 @@ describe("parseCopySpec", () => {
 
     const result2 = parseCopySpec("src:");
     assert.deepStrictEqual(result2, { src: "src", dst: "" });
+  });
+});
+
+describe("parseEnvVar", () => {
+  it("parses simple env var", () => {
+    const result = parseEnvVar("FOO=bar");
+    assert.deepStrictEqual(result, { key: "FOO", value: "bar" });
+  });
+
+  it("parses env var with equals in value", () => {
+    const result = parseEnvVar("CONNECTION=host=localhost;port=5432");
+    assert.deepStrictEqual(result, {
+      key: "CONNECTION",
+      value: "host=localhost;port=5432",
+    });
+  });
+
+  it("parses empty value", () => {
+    const result = parseEnvVar("EMPTY=");
+    assert.deepStrictEqual(result, { key: "EMPTY", value: "" });
+  });
+
+  it("throws on missing equals", () => {
+    assert.throws(() => parseEnvVar("NOEQUALS"), /Invalid env var/);
+  });
+});
+
+describe("parseEnvVars", () => {
+  it("parses multiple env vars", () => {
+    const result = parseEnvVars(["FOO=bar", "BAZ=qux"]);
+    assert.deepStrictEqual(result, { FOO: "bar", BAZ: "qux" });
+  });
+
+  it("returns empty object for empty array", () => {
+    const result = parseEnvVars([]);
+    assert.deepStrictEqual(result, {});
+  });
+
+  it("later values override earlier ones", () => {
+    const result = parseEnvVars(["FOO=first", "FOO=second"]);
+    assert.deepStrictEqual(result, { FOO: "second" });
   });
 });
