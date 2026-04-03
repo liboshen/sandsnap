@@ -8,6 +8,7 @@ import type { Region } from "@deno/sandbox";
 import { snapshotExists } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
+import { copyToSandbox, copyFromSandbox } from "../lib/copy.js";
 
 type Timeout = `${number}m` | `${number}s` | "session";
 type Memory = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
@@ -16,6 +17,8 @@ interface RunOptions {
   timeout: string;
   memory: string;
   region: string;
+  copy: string[];
+  copyOut: string[];
   script?: string;
 }
 
@@ -76,6 +79,11 @@ export async function run(snapshot: string, options: RunOptions): Promise<void> 
     });
     info(`Sandbox ready: ${sandbox.id}`);
     
+    // Copy files into sandbox
+    if (options.copy.length > 0) {
+      await copyToSandbox(sandbox, options.copy);
+    }
+    
     // Setup cleanup on Ctrl+C
     const cleanup = async () => {
       info("\nCleaning up sandbox...");
@@ -100,13 +108,16 @@ export async function run(snapshot: string, options: RunOptions): Promise<void> 
       
       if (script) {
         // Write script to temp file and execute
-        await sandbox.fs.writeTextFile("/tmp/sandboxer-script.sh", script);
+        await sandbox.fs.writeTextFile("/tmp/sandsnap-script.sh", script);
         try {
-          await sandbox.sh`bash /tmp/sandboxer-script.sh`;
-          success("Script completed successfully.");
+          await sandbox.sh`bash /tmp/sandsnap-script.sh`;
         } catch (err: unknown) {
           if (err && typeof err === "object" && "code" in err) {
             error(`Script failed with exit code ${err.code}`);
+            // Still try to copy out files before exiting
+            if (options.copyOut.length > 0) {
+              await copyFromSandbox(sandbox, options.copyOut);
+            }
             await cleanup();
             process.exit(typeof err.code === "number" ? err.code : 1);
           }
@@ -115,8 +126,14 @@ export async function run(snapshot: string, options: RunOptions): Promise<void> 
       } else {
         // Interactive mode
         await openInteractiveShell(sandbox);
-        success("Session ended.");
       }
+      
+      // Copy files out from sandbox
+      if (options.copyOut.length > 0) {
+        await copyFromSandbox(sandbox, options.copyOut);
+      }
+      
+      success(script ? "Script completed successfully." : "Session ended.");
     } finally {
       // Always cleanup
       await cleanup();

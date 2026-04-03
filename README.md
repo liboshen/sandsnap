@@ -108,6 +108,7 @@ EOF
 | `--capacity <size>` | Volume capacity (e.g., `2GiB`, `10GiB`) | `10GiB` |
 | `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
+| `--copy <src:dst>` | Copy file/dir from host to sandbox (repeatable) | - |
 | `--script <file>` | Read commands from file | - |
 | `--overwrite` | Replace existing snapshot | `false` |
 
@@ -135,6 +136,8 @@ sandsnap run my-env --script test.sh
 | `--timeout <duration>` | Sandbox timeout | `session` |
 | `--memory <size>` | Sandbox memory (e.g., `1GiB`, `2GiB`, `4GiB`) | `1280MiB` |
 | `--region <region>` | Region (`ord` or `ams`) | `ord` |
+| `--copy <src:dst>` | Copy file/dir from host to sandbox (repeatable) | - |
+| `--copy-out <src:dst>` | Copy file/dir from sandbox to host (repeatable) | - |
 | `--script <file>` | Read commands from file | - |
 
 ### `sandsnap list`
@@ -219,6 +222,22 @@ cd repo
 npm install
 npm test
 EOF
+```
+
+### File copy workflow
+
+```bash
+# Copy files into sandbox, process, copy results out
+sandsnap run python-env \
+  --copy ./data:/home/app/data \
+  --copy ./config.json:/home/app/config.json \
+  --copy-out /home/app/results:/tmp/results \
+  <<'EOF'
+python3 process.py --config /home/app/config.json
+EOF
+
+# Check results
+ls /tmp/results/
 ```
 
 ### AI agent workflow

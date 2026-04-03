@@ -8,6 +8,7 @@ import type { Region } from "@deno/sandbox";
 import { getClient, snapshotExists, tempVolumeSlug } from "../lib/client.js";
 import { isInteractive, readStdin, readScriptFile, promptOnFailure } from "../lib/stdin.js";
 import { info, success, error, step } from "../lib/output.js";
+import { copyToSandbox } from "../lib/copy.js";
 
 type Capacity = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
 type Memory = `${number}GiB` | `${number}MiB` | `${number}GB` | `${number}MB`;
@@ -19,6 +20,7 @@ interface EvolveOptions {
   capacity: string;
   memory: string;
   region: string;
+  copy: string[];
   script?: string;
   overwrite?: boolean;
 }
@@ -113,6 +115,11 @@ export async function evolve(name: string, options: EvolveOptions): Promise<void
         memory: memory,
       });
       info(`Sandbox ready: ${sandbox.id}`);
+      
+      // Copy files into sandbox
+      if (options.copy.length > 0) {
+        await copyToSandbox(sandbox, options.copy);
+      }
       
       // Step 3: Execute commands
       step(3, 4, script ? "Executing script..." : "Opening interactive shell...");

@@ -29,9 +29,14 @@ program
   .option("--capacity <size>", "Volume capacity (e.g., 2GiB, 10GiB)", "10GiB")
   .option("--memory <size>", "Sandbox memory (e.g., 1GiB, 2GiB, 4GiB)", "1280MiB")
   .option("--region <region>", "Region (ord or ams)", "ord")
+  .option("--copy <src:dst>", "Copy file/dir from host to sandbox (repeatable)", collect, [])
   .option("--script <file>", "Read commands from script file")
   .option("--overwrite", "Overwrite existing snapshot with same name")
   .action(evolve);
+
+function collect(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
 
 program
   .command("run <snapshot>")
@@ -39,6 +44,8 @@ program
   .option("--timeout <duration>", "Sandbox timeout (e.g., 5m, 10m, session)", "session")
   .option("--memory <size>", "Sandbox memory (e.g., 1GiB, 2GiB, 4GiB)", "1280MiB")
   .option("--region <region>", "Region (ord or ams)", "ord")
+  .option("--copy <src:dst>", "Copy file/dir from host to sandbox (repeatable)", collect, [])
+  .option("--copy-out <src:dst>", "Copy file/dir from sandbox to host after execution (repeatable)", collect, [])
   .option("--script <file>", "Read commands from script file")
   .action(run);
 
